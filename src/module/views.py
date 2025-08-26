@@ -2,8 +2,8 @@
 
 from fastapi import APIRouter
 
-router = APIRouter(prefix="/module1", tags=["module1"])
-from . import utils, services, models
+router = APIRouter()
+from . import utils, service, models
 
 
 @router.get("/")
