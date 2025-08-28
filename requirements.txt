@@ -9,3 +9,7 @@ openai
 pgvector
 python-dotenv
 psycopg2-binary
+transformers
+torch
+Pillow
+requests

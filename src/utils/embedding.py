@@ -1,35 +1,61 @@
+from transformers import CLIPModel, CLIPProcessor
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from src.database import get_db
 import numpy as np
 from src.module.models import Product, ProductEmbedding
 from typing import List
-import openai
+from .openai_client import client
+from typing import List
+import torch
+from PIL import Image
+import requests
+from io import BytesIO
 
 router = APIRouter()
 TEXT_MODEL = "text-embedding-3-large"
-IMAGE_MODEL = "gpt-4o-mini"
+
+# Load once globally (don’t reload inside each request!)
+clip_model = CLIPModel.from_pretrained("openai/clip-vit-large-patch14")
+clip_processor = CLIPProcessor.from_pretrained("openai/clip-vit-large-patch14")
 
 
 # function to get text embedding
 def get_text_embedding(text: str):
-    res = openai.embeddings.create(model=TEXT_MODEL, input=text)
+    res = client.embeddings.create(model=TEXT_MODEL, input=text)
     return res.data[0].embedding
 
 # function to get image embedding by passing the image as a list of image_url
 def get_image_embedding(image_urls: List[str]):
-    if len(image_urls) < 1:
+    """
+    Generate image embeddings using CLIP from HuggingFace.
+    Supports multiple images and averages their vectors.
+    """
+    if not image_urls:
         return None
 
     embeddings = []
 
     for url in image_urls:
-        res = openai.embeddings.create(model=IMAGE_MODEL, input=url)
-        embeddings.append(res.data[0].embedding)
+        # Load image (URL or local path)
+        if url.startswith("http"):
+            response = requests.get(url)
+            img = Image.open(BytesIO(response.content)).convert("RGB")
+        else:
+            img = Image.open(url).convert("RGB")
 
-    # average across all image vectors
+        # Preprocess and get embeddings
+        inputs = clip_processor(images=img, return_tensors="pt")
+        with torch.no_grad():
+            image_features = clip_model.get_image_features(**inputs)
+
+        # Normalize (cosine similarity space)
+        image_features = image_features / image_features.norm(p=2, dim=-1, keepdim=True)
+
+        embeddings.append(image_features.cpu().numpy())
+
+    # Average if multiple images
     return np.mean(embeddings, axis=0).tolist()
-
 
 @router.post("/generate_embeddings")
 def generate_embeddings(db: Session = Depends(get_db)):
@@ -60,3 +86,9 @@ def generate_embeddings(db: Session = Depends(get_db)):
 
     db.commit()
     return {"created": created, "updated": updated, "total": len(products)}
+
+
+@router.get("/products")
+def get_products(db: Session = Depends(get_db)):
+    products = db.query(Product).all()
+    return products[:2]

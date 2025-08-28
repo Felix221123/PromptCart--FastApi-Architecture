@@ -45,7 +45,7 @@ class ProductEmbedding(Base):
     __table_args__ = {"schema": "public"}
 
     product_id = Column(UUID(as_uuid=True), ForeignKey("public.products.id", ondelete="CASCADE"), primary_key=True)
-    text_embedding = Column(Vector(3072), nullable=True)   # text-embedding-3-large → 3072 dims
-    image_embedding = Column(Vector(1536), nullable=True)  # gpt-4o-mini/CLIP → 1536 dims
+    text_embedding = Column(Vector(3072), nullable=True)
+    image_embedding = Column(Vector(768), nullable=True)
 
     product = relationship("Product", back_populates="embedding")
