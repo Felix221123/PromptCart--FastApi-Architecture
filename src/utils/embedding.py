@@ -38,8 +38,9 @@ def get_image_embedding(image_urls: List[str]):
 
     for url in image_urls:
         # Load image (URL or local path)
-        if url.startswith("http"):
-            response = requests.get(url)
+        if url.startswith("http://") or url.startswith("https://"):
+            response = requests.get(url,timeout=10)
+            response.raise_for_status()
             img = Image.open(BytesIO(response.content)).convert("RGB")
         else:
             img = Image.open(url).convert("RGB")
@@ -55,8 +56,10 @@ def get_image_embedding(image_urls: List[str]):
         embeddings.append(image_features.cpu().numpy())
 
     # Average if multiple images
-    return np.mean(embeddings, axis=0).tolist()
+    return np.mean(embeddings, axis=0).squeeze().tolist()
 
+
+# function router to generate embeddings
 @router.post("/generate_embeddings")
 def generate_embeddings(db: Session = Depends(get_db)):
     products = db.query(Product).all()
@@ -68,7 +71,7 @@ def generate_embeddings(db: Session = Depends(get_db)):
 
         image_emb = None
         if product.images:
-            image_emb = get_image_embedding(product.images[0])
+            image_emb = get_image_embedding(product.images)
 
         embedding = db.query(ProductEmbedding).filter_by(product_id=product.id).first()
         if embedding:
