@@ -1,5 +1,5 @@
 # PromptCart Fast API Architecture 
-This project folder includes the architectural design of how PromptCart utilises product recommendation using vector databases(semantic search),AI powered questions & answers using OpenAI & google search API 
+This project folder includes the architectural design of how PromptCart utilises product recommendation using vector database(semantic search),AI powered personalised chatbot for questions & answers using different APIs and LLMs
 
 ## How to start project
 - `pip install -r requirements.txt`
