@@ -2,3 +2,6 @@
    - Make the search functionality using vector searchings
    - Create a folder for the chat functionality
    - Create a folder the recommendation functionality
+
+   here is the userMessage return from the frontend
+

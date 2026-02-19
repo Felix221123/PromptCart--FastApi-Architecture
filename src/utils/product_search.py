@@ -6,11 +6,12 @@ from .openai_client import client
 from ..module import models
 from ..module.schemas import ProductResponse
 from typing import List
+import openai
 
 router = APIRouter()
 
 # similarity threshold for search results
-SIMILARITY_THRESHOLD = 0.2
+SIMILARITY_THRESHOLD = 0.1
 
 # function to search for products
 @router.post("/product_search", response_model=None)
